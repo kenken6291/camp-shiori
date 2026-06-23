@@ -3,13 +3,10 @@ name: 旅しおり ビルド & デプロイ
 on:
   repository_dispatch:
     types: [update-itinerary]
-
-  # 手動実行も可能にしておく
   workflow_dispatch:
 
-# GitHub Pages へのデプロイに必要な権限
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -20,22 +17,20 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      # 1. リポジトリをチェックアウト
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. GASから受け取ったJSONをファイルに保存
       - name: Save itinerary JSON
         run: |
           mkdir -p dist
-          # repository_dispatch 経由なら client_payload を使用
-          # workflow_dispatch（手動）なら既存の data.json を使用
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
             echo '${{ toJson(github.event.client_payload.itinerary) }}' > dist/data.json
           else
-            # 手動実行時: リポジトリ内の data.json があれば使用、なければサンプル
             if [ -f "data.json" ]; then
               cp data.json dist/data.json
             else
@@ -43,22 +38,21 @@ jobs:
             fi
           fi
 
-      # 3. HTMLテンプレートにJSONを埋め込んでindex.htmlを生成
-      - name: Build HTML with embedded data
+      - name: Build HTML
         run: |
-          # テンプレートの __ITINERARY_DATA__ プレースホルダーをJSONで置換
           DATA=$(cat dist/data.json)
           sed "s|__ITINERARY_DATA__|$(echo "$DATA" | sed 's/[&/\]/\\&/g; s/$/\\n/' | tr -d '\n')|g" \
             src/template.html > dist/index.html
-
-          echo "✅ dist/index.html を生成しました"
           ls -lh dist/
 
-      # 4. GitHub Pages へデプロイ（gh-pages ブランチ）
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          publish_branch: gh-pages
-          commit_message: "🏕️ 旅しおり更新: ${{ github.event.client_payload.itinerary.trip_title || 'manual update' }}"
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
