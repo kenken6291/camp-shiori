@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d0d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>旅しおり</title>
+
+  <!-- PWA manifest inline -->
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    /* ============================================================
+       デザイントークン — 焚き火の残り火 × 夜の山稜
+       Palette:
+         --ember   : #e8784a  (燃え木の橙)
+         --ash     : #c8a882  (白灰)
+         --pine    : #2e4a3a  (松の緑)
+         --night   : #0d0d0d  (完全な闇)
+         --stone   : #1a1a1a  (石板)
+         --slate   : #252525  (岩肌)
+         --mist    : #b0a898  (霧)
+       Typography:
+         Display   : 'Hiragino Mincho ProN', serif (和の重み)
+         Body/UI   : system-ui, sans-serif
+    ============================================================ */
+
+    :root {
+      --ember  : #e8784a;
+      --ember2 : #c75f30;
+      --ash    : #c8a882;
+      --pine   : #2e4a3a;
+      --night  : #0d0d0d;
+      --stone  : #1a1a1a;
+      --slate  : #252525;
+      --mist   : #b0a898;
+      --white  : #f0ece4;
+      --nav-h  : 64px;
+      --safe-b : env(safe-area-inset-bottom, 0px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--night);
+      color: var(--white);
+      font-family: system-ui, -apple-system, 'Hiragino Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    /* ---- ヘッダー ------------------------------------------- */
+    #header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: var(--stone);
+      border-bottom: 1px solid #2a2a2a;
+      padding: 12px 20px 10px;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    #header .trip-title {
+      font-family: 'Hiragino Mincho ProN', 'Yu Mincho', Georgia, serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--ash);
+      letter-spacing: 0.04em;
+      flex: 1;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    #header .updated {
+      font-size: 10px;
+      color: #555;
+      flex-shrink: 0;
+    }
+
+    /* ---- スクロール可能エリア --------------------------------- */
+    #main {
+      position: fixed;
+      top: 52px; left: 0; right: 0;
+      bottom: calc(var(--nav-h) + var(--safe-b));
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    /* ---- タブパネル ------------------------------------------ */
+    .tab-panel {
+      display: none;
+      padding: 16px 16px 24px;
+    }
+    .tab-panel.active { display: block; }
+
+    /* ---- ボトムナビ ------------------------------------------ */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: calc(var(--nav-h) + var(--safe-b));
+      padding-bottom: var(--safe-b);
+      background: var(--stone);
+      border-top: 1px solid #2a2a2a;
+      display: flex;
+      z-index: 100;
+    }
+
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: #555;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      transition: color 0.15s;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-btn .icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+    .nav-btn.active {
+      color: var(--ember);
+    }
+    .nav-btn:active {
+      opacity: 0.7;
+    }
+
+    /* ---- セクション共通 --------------------------------------- */
+    .section-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--ember);
+      text-transform: uppercase;
+      margin-bottom: 10px;
+      margin-top: 20px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* ---- スケジュールカード ----------------------------------- */
+    .schedule-list { display: flex; flex-direction: column; gap: 1px; }
+
+    .schedule-card {
+      background: var(--slate);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: 60px 1fr;
+      gap: 0 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .schedule-card + .schedule-card { margin-top: 8px; }
+
+    /* 左のタイムライン線 */
+    .schedule-card::before {
+      content: '';
+      position: absolute;
+      left: 76px; top: 0; bottom: 0;
+      width: 1px;
+      background: #333;
+    }
+
+    .s-time {
+      font-size: 11px;
+      color: var(--ash);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.3;
+      padding-top: 2px;
+    }
+    .s-time .date-part { font-size: 10px; color: #666; }
+
+    .s-body {}
+    .s-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+    .s-memo {
+      font-size: 12px;
+      color: var(--mist);
+      margin-bottom: 6px;
+    }
+    .s-status {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--pine);
+      color: #7ec8a0;
+      letter-spacing: 0.06em;
+    }
+    .map-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ember);
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .map-btn:active { opacity: 0.6; }
+
+    /* ---- スポット詳細カード ---------------------------------- */
+    .spot-card {
+      background: var(--slate);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 10px;
+    }
+    .spot-name {
+      font-family: 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ash);
+      margin-bottom: 12px;
+    }
+    .spot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .spot-item {}
+    .spot-item .label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .spot-item .value {
+      font-size: 13px;
+      color: var(--white);
+    }
+    .spot-facilities {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .facility-tag {
+      font-size: 10px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      border: 1px solid #3a3a3a;
+      color: var(--mist);
+    }
+    .reservation-badge {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(232, 120, 74, 0.15);
+      color: var(--ember);
+      border: 1px solid rgba(232, 120, 74, 0.3);
+    }
+
+    /* ---- 持ち物チェックリスト -------------------------------- */
+    .check-category {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ash);
+      letter-spacing: 0.06em;
+      margin: 16px 0 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #2a2a2a;
+    }
+    .check-category:first-child { margin-top: 0; }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 4px;
+      border-bottom: 1px solid #1f1f1f;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.15s;
+    }
+    .check-item:active { opacity: 0.6; }
+    .check-item:last-child { border-bottom: none; }
+
+    .check-box {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      border: 2px solid #404040;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .check-box .tick {
+      font-size: 13px;
+      display: none;
+    }
+    .check-item.done .check-box {
+      background: var(--ember2);
+      border-color: var(--ember2);
+    }
+    .check-item.done .check-box .tick { display: block; }
+    .check-item.done .check-label {
+      text-decoration: line-through;
+      color: #555;
+    }
+
+    .check-label {
+      font-size: 14px;
+      color: var(--white);
+      flex: 1;
+    }
+    .check-sub {
+      font-size: 11px;
+      color: #666;
+      margin-left: 34px;
+      margin-top: -6px;
+      padding-bottom: 4px;
+    }
+
+    /* ---- チェック進捗バー ----------------------------------- */
+    .progress-bar-wrap {
+      background: var(--slate);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+    .progress-label { font-size: 12px; color: var(--mist); }
+    .progress-count { font-size: 20px; font-weight: 700; color: var(--ember); }
+    .progress-total { font-size: 12px; color: #666; }
+    .progress-bar {
+      height: 4px;
+      background: #2a2a2a;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--ember);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    /* ---- 空ステート ----------------------------------------- */
+    .empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: #444;
+    }
+    .empty .icon { font-size: 40px; margin-bottom: 8px; }
+    .empty p { font-size: 13px; }
+
+    /* ---- スクロールバー非表示 -------------------------------- */
+    #main::-webkit-scrollbar { display: none; }
+    #main { scrollbar-width: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<header id="header">
+  <div class="trip-title" id="trip-title">読み込み中…</div>
+  <div class="updated" id="updated-at"></div>
+</header>
+
+<!-- メインコンテンツ -->
+<main id="main">
+
+  <!-- 日程タブ -->
+  <div id="tab-schedule" class="tab-panel active">
+    <div id="schedule-content"></div>
+  </div>
+
+  <!-- スポットタブ -->
+  <div id="tab-spots" class="tab-panel">
+    <div id="spots-content"></div>
+  </div>
+
+  <!-- 持ち物タブ -->
+  <div id="tab-checklist" class="tab-panel">
+    <div class="progress-bar-wrap">
+      <div class="progress-row">
+        <span class="progress-label">準備完了</span>
+        <span><span class="progress-count" id="check-done">0</span><span class="progress-total" id="check-total"> / 0</span></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+    </div>
+    <div id="checklist-content"></div>
+  </div>
+</main>
+
+<!-- ボトムナビゲーション -->
+<nav id="bottom-nav">
+  <button class="nav-btn active" data-tab="schedule" onclick="switchTab('schedule', this)">
+    <span class="icon">🗓️</span>日程
+  </button>
+  <button class="nav-btn" data-tab="spots" onclick="switchTab('spots', this)">
+    <span class="icon">🏕️</span>スポット
+  </button>
+  <button class="nav-btn" data-tab="checklist" onclick="switchTab('checklist', this)">
+    <span class="icon">🎒</span>持ち物
+  </button>
+</nav>
+
+<script>
+// ============================================================
+//  旅程データ — GitHub Actions がここに埋め込む
+// ============================================================
+const ITINERARY = {
+  "generated_at": "2024-07-14T10:00:00.000Z",
+  "trip_title": "夏の奥多摩ソロキャン旅 🏕️",
+  "schedule": [
+    {
+      "datetime": "2024/07/15 08:00",
+      "spot_name": "自宅 出発",
+      "map_url": "",
+      "memo": "渋滞を避けて早めに出発",
+      "status": "予定"
+    },
+    {
+      "datetime": "2024/07/15 10:30",
+      "spot_name": "道の駅 たばやま",
+      "map_url": "https://maps.google.com/?q=道の駅たばやま",
+      "memo": "鹿串・山賊焼きランチ。薪が売ってたら購入",
+      "status": "予定"
+    },
+    {
+      "datetime": "2024/07/15 13:00",
+      "spot_name": "留浦浮橋（とずらうきはし）",
+      "map_url": "https://maps.google.com/?q=留浦浮橋+奥多摩",
+      "memo": "奥多摩湖の浮き橋。写真スポット",
+      "status": "予定"
+    },
+    {
+      "datetime": "2024/07/15 15:00",
+      "spot_name": "奥多摩キャンプセンター",
+      "map_url": "https://maps.google.com/?q=奥多摩キャンプセンター",
+      "memo": "チェックイン。川沿いのサイトを希望",
+      "status": "予約済"
+    },
+    {
+      "datetime": "2024/07/16 10:00",
+      "spot_name": "チェックアウト・帰路",
+      "map_url": "",
+      "memo": "R411で帰宅。青梅でランチ",
+      "status": "予定"
+    }
+  ],
+  "spots": [
+    {
+      "spot_name": "奥多摩キャンプセンター",
+      "address": "東京都西多摩郡奥多摩町日原",
+      "fee": "1,500円/泊",
+      "check_in": "13:00",
+      "check_out": "11:00",
+      "facilities": "温水シャワー, トイレ, 焚き火台レンタル, 薪販売, Wi-Fi",
+      "reservation": "予約番号: ABC-12345"
+    },
+    {
+      "spot_name": "道の駅 たばやま",
+      "address": "山梨県北都留郡丹波山村",
+      "fee": "無料（駐車場）",
+      "check_in": "-",
+      "check_out": "-",
+      "facilities": "温泉（のめこい湯）, 直売所, レストラン",
+      "reservation": "予約不要"
+    }
+  ],
+  "checklist": [
+    {
+      "category": "🏕️ シェルター・寝具",
+      "items": [
+        { "item": "テント（ソロドーム）", "status": "packed" },
+        { "item": "シュラフ（#3）", "status": "" },
+        { "item": "グランドシート", "status": "" },
+        { "item": "エアマット", "status": "" }
+      ]
+    },
+    {
+      "category": "🔥 焚き火・調理",
+      "items": [
+        { "item": "焚き火台", "status": "" },
+        { "item": "ライター × 2", "status": "" },
+        { "item": "メスティン", "status": "" },
+        { "item": "ガスバーナー + OD缶", "status": "" },
+        { "item": "コーヒーミル", "status": "" }
+      ]
+    },
+    {
+      "category": "👕 衣類",
+      "items": [
+        { "item": "速乾Tシャツ × 2", "status": "" },
+        { "item": "フリース", "status": "" },
+        { "item": "レインウェア", "status": "" },
+        { "item": "着替え × 1", "status": "" }
+      ]
+    },
+    {
+      "category": "🛒 食料",
+      "items": [
+        { "item": "米（2合）", "status": "" },
+        { "item": "カレールー", "status": "" },
+        { "item": "インスタントコーヒー", "status": "" },
+        { "item": "行動食（ナッツ・チョコ）", "status": "" }
+      ]
+    },
+    {
+      "category": "📱 電子機器",
+      "items": [
+        { "item": "スマホ充電器", "status": "" },
+        { "item": "モバイルバッテリー", "status": "" },
+        { "item": "ヘッドライト", "status": "" }
+      ]
+    }
+  ]
+}
+;
+
+// ============================================================
+//  ローカルストレージキー
+// ============================================================
+const LS_KEY = 'camp_checks_' + (ITINERARY.trip_title || 'default');
+
+// ============================================================
+//  タブ切り替え
+// ============================================================
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  document.getElementById('main').scrollTop = 0;
+}
+
+// ============================================================
+//  ユーティリティ
+// ============================================================
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+function formatDateDisplay(dt) {
+  if (!dt) return '';
+  // "2024/07/15 10:00" → "7/15 月" 形式へ
+  const m = dt.match(/(\d+)\/(\d+)\/(\d+)\s*(\d+:\d+)?/);
+  if (!m) return dt;
+  const d = new Date(+m[1], +m[2]-1, +m[3]);
+  const days = ['日','月','火','水','木','金','土'];
+  const day = days[d.getDay()];
+  return { date: `${+m[2]}/${+m[3]}(${day})`, time: m[4] || '' };
+}
+
+// ============================================================
+//  スケジュール描画
+// ============================================================
+function renderSchedule() {
+  const el = document.getElementById('schedule-content');
+  const data = ITINERARY.schedule || [];
+  if (!data.length) {
+    el.innerHTML = '<div class="empty"><div class="icon">🌲</div><p>スケジュールはまだ登録されていません</p></div>';
+    return;
+  }
+
+  // 日付でグルーピング
+  const byDate = {};
+  data.forEach(s => {
+    const d = formatDateDisplay(s.datetime);
+    const key = (d && d.date) ? d.date : (s.datetime || '日付未定');
+    if (!byDate[key]) byDate[key] = [];
+    byDate[key].push({ ...s, _timeOnly: (d && d.time) ? d.time : '' });
+  });
+
+  let html = '<div class="schedule-list">';
+  Object.entries(byDate).forEach(([dateStr, items]) => {
+    html += `<div class="section-label">${esc(dateStr)}</div>`;
+    items.forEach(s => {
+      const mapBtn = s.map_url
+        ? `<a class="map-btn" href="${esc(s.map_url)}" target="_blank" rel="noopener">📍 地図を開く</a>`
+        : '';
+      const status = s.status
+        ? `<span class="s-status">${esc(s.status)}</span>`
+        : '';
+      html += `
+        <div class="schedule-card">
+          <div class="s-time">${esc(s._timeOnly)}</div>
+          <div class="s-body">
+            <div class="s-name">${esc(s.spot_name)}</div>
+            ${s.memo ? `<div class="s-memo">${esc(s.memo)}</div>` : ''}
+            ${status}
+            ${mapBtn}
+          </div>
+        </div>`;
+    });
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ============================================================
+//  スポット詳細描画
+// ============================================================
+function renderSpots() {
+  const el = document.getElementById('spots-content');
+  const data = ITINERARY.spots || [];
+  if (!data.length) {
+    el.innerHTML = '<div class="empty"><div class="icon">🗺️</div><p>スポット情報はまだ登録されていません</p></div>';
+    return;
+  }
+
+  let html = '';
+  data.forEach(s => {
+    const facilities = s.facilities
+      ? s.facilities.split(/[,、,\s]+/).filter(Boolean)
+          .map(f => `<span class="facility-tag">${esc(f.trim())}</span>`).join('')
+      : '';
+    const resvBadge = s.reservation
+      ? `<div class="reservation-badge">📋 ${esc(s.reservation)}</div>` : '';
+
+    html += `
+      <div class="spot-card">
+        <div class="spot-name">${esc(s.spot_name)}</div>
+        <div class="spot-grid">
+          ${s.address   ? `<div class="spot-item"><div class="label">住所</div><div class="value">${esc(s.address)}</div></div>` : ''}
+          ${s.fee       ? `<div class="spot-item"><div class="label">料金</div><div class="value">${esc(s.fee)}</div></div>` : ''}
+          ${s.check_in  ? `<div class="spot-item"><div class="label">IN</div><div class="value">${esc(s.check_in)}</div></div>` : ''}
+          ${s.check_out ? `<div class="spot-item"><div class="label">OUT</div><div class="value">${esc(s.check_out)}</div></div>` : ''}
+        </div>
+        ${facilities ? `<div class="spot-facilities">${facilities}</div>` : ''}
+        ${resvBadge}
+      </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// ============================================================
+//  持ち物チェックリスト描画 & ローカルストレージ連携
+// ============================================================
+let checkState = {};
+
+function loadChecks() {
+  try { checkState = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch(e) { checkState = {}; }
+}
+function saveChecks() {
+  localStorage.setItem(LS_KEY, JSON.stringify(checkState));
+}
+function toggleCheck(id) {
+  checkState[id] = !checkState[id];
+  saveChecks();
+
+  const el = document.getElementById('ci-' + id);
+  if (el) el.classList.toggle('done', checkState[id]);
+  updateProgress();
+}
+
+function updateProgress() {
+  const data = ITINERARY.checklist || [];
+  let total = 0, done = 0;
+  data.forEach(group => group.items.forEach((item, i) => {
+    const id = slugify(group.category) + '_' + i;
+    total++;
+    if (checkState[id]) done++;
+  }));
+  document.getElementById('check-done').textContent = done;
+  document.getElementById('check-total').textContent = ' / ' + total;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function slugify(str) {
+  return (str || '').replace(/\s+/g, '_').replace(/[^\w\u3040-\u9fff]/g, '');
+}
+
+function renderChecklist() {
+  const el = document.getElementById('checklist-content');
+  const data = ITINERARY.checklist || [];
+  if (!data.length) {
+    el.innerHTML = '<div class="empty"><div class="icon">🎒</div><p>持ち物リストはまだ登録されていません</p></div>';
+    return;
+  }
+
+  let html = '';
+  data.forEach(group => {
+    html += `<div class="check-category">${esc(group.category)}</div>`;
+    group.items.forEach((item, i) => {
+      const id = slugify(group.category) + '_' + i;
+      const done = checkState[id] ? 'done' : '';
+      html += `
+        <div class="check-item ${done}" id="ci-${esc(id)}" onclick="toggleCheck('${esc(id)}')">
+          <div class="check-box"><span class="tick">✓</span></div>
+          <span class="check-label">${esc(item.item)}</span>
+        </div>`;
+      if (item.status) {
+        html += `<div class="check-sub">${esc(item.status)}</div>`;
+      }
+    });
+  });
+  el.innerHTML = html;
+  updateProgress();
+}
+
+// ============================================================
+//  ヘッダー情報セット
+// ============================================================
+function renderHeader() {
+  document.title = ITINERARY.trip_title || '旅しおり';
+  document.getElementById('trip-title').textContent = ITINERARY.trip_title || '旅しおり';
+  if (ITINERARY.generated_at) {
+    const d = new Date(ITINERARY.generated_at);
+    const fmt = `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} 更新`;
+    document.getElementById('updated-at').textContent = fmt;
+  }
+}
+
+// ============================================================
+//  初期化
+// ============================================================
+(function init() {
+  loadChecks();
+  renderHeader();
+  renderSchedule();
+  renderSpots();
+  renderChecklist();
+})();
+</script>
+</body>
+</html>
