@@ -1,0 +1,108 @@
+{
+  "generated_at": "2024-07-14T10:00:00.000Z",
+  "trip_title": "夏の奥多摩ソロキャン旅 🏕️",
+  "schedule": [
+    {
+      "datetime": "2024/07/15 08:00",
+      "spot_name": "自宅 出発",
+      "map_url": "",
+      "memo": "渋滞を避けて早めに出発",
+      "status": "予定"
+    },
+    {
+      "datetime": "2024/07/15 10:30",
+      "spot_name": "道の駅 たばやま",
+      "map_url": "https://maps.google.com/?q=道の駅たばやま",
+      "memo": "鹿串・山賊焼きランチ。薪が売ってたら購入",
+      "status": "予定"
+    },
+    {
+      "datetime": "2024/07/15 13:00",
+      "spot_name": "留浦浮橋（とずらうきはし）",
+      "map_url": "https://maps.google.com/?q=留浦浮橋+奥多摩",
+      "memo": "奥多摩湖の浮き橋。写真スポット",
+      "status": "予定"
+    },
+    {
+      "datetime": "2024/07/15 15:00",
+      "spot_name": "奥多摩キャンプセンター",
+      "map_url": "https://maps.google.com/?q=奥多摩キャンプセンター",
+      "memo": "チェックイン。川沿いのサイトを希望",
+      "status": "予約済"
+    },
+    {
+      "datetime": "2024/07/16 10:00",
+      "spot_name": "チェックアウト・帰路",
+      "map_url": "",
+      "memo": "R411で帰宅。青梅でランチ",
+      "status": "予定"
+    }
+  ],
+  "spots": [
+    {
+      "spot_name": "奥多摩キャンプセンター",
+      "address": "東京都西多摩郡奥多摩町日原",
+      "fee": "1,500円/泊",
+      "check_in": "13:00",
+      "check_out": "11:00",
+      "facilities": "温水シャワー, トイレ, 焚き火台レンタル, 薪販売, Wi-Fi",
+      "reservation": "予約番号: ABC-12345"
+    },
+    {
+      "spot_name": "道の駅 たばやま",
+      "address": "山梨県北都留郡丹波山村",
+      "fee": "無料（駐車場）",
+      "check_in": "-",
+      "check_out": "-",
+      "facilities": "温泉（のめこい湯）, 直売所, レストラン",
+      "reservation": "予約不要"
+    }
+  ],
+  "checklist": [
+    {
+      "category": "🏕️ シェルター・寝具",
+      "items": [
+        { "item": "テント（ソロドーム）", "status": "packed" },
+        { "item": "シュラフ（#3）", "status": "" },
+        { "item": "グランドシート", "status": "" },
+        { "item": "エアマット", "status": "" }
+      ]
+    },
+    {
+      "category": "🔥 焚き火・調理",
+      "items": [
+        { "item": "焚き火台", "status": "" },
+        { "item": "ライター × 2", "status": "" },
+        { "item": "メスティン", "status": "" },
+        { "item": "ガスバーナー + OD缶", "status": "" },
+        { "item": "コーヒーミル", "status": "" }
+      ]
+    },
+    {
+      "category": "👕 衣類",
+      "items": [
+        { "item": "速乾Tシャツ × 2", "status": "" },
+        { "item": "フリース", "status": "" },
+        { "item": "レインウェア", "status": "" },
+        { "item": "着替え × 1", "status": "" }
+      ]
+    },
+    {
+      "category": "🛒 食料",
+      "items": [
+        { "item": "米（2合）", "status": "" },
+        { "item": "カレールー", "status": "" },
+        { "item": "インスタントコーヒー", "status": "" },
+        { "item": "行動食（ナッツ・チョコ）", "status": "" }
+      ]
+    },
+    {
+      "category": "📱 電子機器",
+      "items": [
+        { "item": "スマホ充電器", "status": "" },
+        { "item": "モバイルバッテリー", "status": "" },
+        { "item": "ヘッドライト", "status": "" }
+      ]
+    }
+  ]
+}
